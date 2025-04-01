@@ -4,3 +4,4 @@ polars
 openpyxl
 xlrd
 fastexcel
+xlsxwriter
