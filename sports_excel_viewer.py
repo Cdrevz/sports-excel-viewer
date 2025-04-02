@@ -357,7 +357,7 @@ elif page == "Aussie Rules":
             df.columns = new_columns
             df = df.with_columns(
                 pl.when(
-                    df["Date"].str.starts_with("Basketball")
+                    df["Date"].str.starts_with("Aussie Rules")
                 )
                 .then(df["Date"])
                 .otherwise(None)
@@ -419,69 +419,102 @@ elif page == "Aussie Rules":
     
 elif page == "Program Review":
     def parse_sports_text(text: str) -> dict:
-        """Parse sports text into structured data, combining extra parts into Tournament"""
-        # First clean the text
-        cleaned = text.replace("Assigned to Group - Competition creation: New season available -", "").strip()
-        # Then split into components
+        """Parse sports text into structured data by extracting Sport, Category, and Tournament.
+        
+        Args:
+            text: Input string containing sports information with possible prefixes/suffixes
+            
+        Returns:
+            Dictionary with keys: Sport, Category, Tournament
+            
+        Raises:
+            ValueError: If text doesn't contain at least Sport and Category separated by '-'
+        """
+        # Define patterns to remove (more maintainable as a list)
+        patterns_to_remove = [
+            "Assigned to Group - Competition creation: New season available -",
+            "- /PROG. EXTENSION/ nan",
+            "nan",
+            "/PROG. EXTENSION/"
+        ]
+        
+        # Clean the text by removing all specified patterns
+        cleaned = text
+        for pattern in patterns_to_remove:
+            cleaned = cleaned.replace(pattern, "")
+        cleaned = cleaned.strip()
+        
+        # Split into components, handling multiple hyphens and spaces
         parts = [part.strip() for part in cleaned.split("-") if part.strip()]
         
-        # Handle different number of parts
+        # Validate we have at least Sport and Category
         if len(parts) < 2:
-            raise ValueError("Text format is incorrect. Need at least Sport and Category")
-        elif len(parts) == 2:
-            # If only 2 parts, use empty string for Tournament
-            sport, category = parts[0], parts[1]
-            tournament = ""
-        else:
-            # If 3+ parts, join the remaining parts for Tournament
-            sport, category = parts[0], parts[1]
-            tournament = " - ".join(parts[2:])  # Join parts 2..n with " - "
-            
+            raise ValueError(f"Invalid format. Expected 'Sport - Category [...]'. Got: '{text}'")
+        
+        # Extract components
+        sport = parts[0]
+        category = parts[1]
+        tournament = " - ".join(parts[2:]) if len(parts) > 2 else ""
+        
+        # Additional cleaning of extracted values
+        sport = sport.strip()
+        category = category.strip()
+        tournament = tournament.strip()
+        
+        # Validate required fields aren't empty after cleaning
+        if not sport or not category:
+            raise ValueError(f"Missing required fields. Sport: '{sport}', Category: '{category}'")
+        
         return {
             "Sport": sport,
             "Category": category,
             "Tournament": tournament
         }
     
-    with st.form(key="transform_form"):
-        st.title("Sports Category Transformer")
-        uploaded_file = st.file_uploader("Upload Excel file for Program Review", type=["xls", "xlsx", "csv"])
-        submit_button = st.form_submit_button(label="Transform")
-        
-        if submit_button:
-            if uploaded_file is not None:
-                try:
-                    # Read file based on type
-                    if uploaded_file.name.endswith('.csv'):
-                        df = pd.read_csv(uploaded_file, header=None)
-                    else:
-                        df = pd.read_excel(uploaded_file, header=None)
-                    
-                    # Check if there's a second column and combine with first column
-                    if df.shape[1] > 1:  # If there are 2 or more columns
-                        df[0] = df[0].astype(str) + " " + df[1].astype(str)
-                    
-                    # Process each row in the first column
-                    form_results = []
-                    for text in df.iloc[:, 0]:  # Process all rows in first column
-                        if pd.notna(text) and str(text).strip():
-                            try:
-                                result = parse_sports_text(str(text))
-                                form_results.append(result)
-                            except ValueError as e:
-                                st.warning(f"Skipping row '{text[:50]}...': {e}")
-                    
-                    if form_results:
-                        df_display = pd.DataFrame(form_results)
-                        st.success(f"Successfully transformed {len(form_results)} rows!")
-                        st.dataframe(df_display)
-                        current_date = datetime.now().strftime("%Y%m%d")
-                        
-                    else:
-                        st.warning("No valid data found in the file.")
-                        
-                except Exception as e:
-                    st.error(f"Error processing file: {str(e)}")
+    st.title("Sports Category Transformer")
+    uploaded_file = st.file_uploader("Upload Excel file for Program Review", type=["xls", "xlsx", "csv"])
+    
+    if uploaded_file is not None:
+        try:
+            # Read file based on type
+            if uploaded_file.name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file, header=None)
             else:
-                st.warning("Please upload a file first.")
-   
+                df = pd.read_excel(uploaded_file, header=None)
+            
+            # Check if there's a second column and combine with first column
+            if df.shape[1] > 1:
+                df[0] = df[0].astype(str) + " " + df[1].astype(str)
+                st.info("Combined data from multiple columns")
+            
+            # Process each row in the first column
+            form_results = []
+            for text in df.iloc[:, 0]:
+                if pd.notna(text) and str(text).strip():
+                    try:
+                        result = parse_sports_text(str(text))
+                        form_results.append(result)
+                    except ValueError as e:
+                        st.warning(f"Skipping row '{text[:50]}...': {e}")
+            
+            if form_results:
+                df_display = pd.DataFrame(form_results)
+                st.success(f"Successfully transformed {len(form_results)} rows!")
+                st.dataframe(df_display)
+                
+                # Add download button
+                current_date = datetime.now().strftime("%Y%m%d")
+                csv = df_display.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Download as CSV",
+                    data=csv,
+                    file_name=f"program_review_{current_date}.csv",
+                    mime='text/csv'
+                )
+            else:
+                st.warning("No valid data found in the file.")
+                
+        except Exception as e:
+            st.error(f"Error processing file: {str(e)}")
+    else:
+        st.info("Please upload a file to begin processing")
