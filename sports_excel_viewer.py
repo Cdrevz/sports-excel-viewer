@@ -245,9 +245,15 @@ elif page == "Rugby":
             )
             # Filter out rows where League column contains "women" (case insensitive)
             if "League" in df.columns:
-                df = df.filter(
-                    ~pl.col("League").str.to_lowercase().str.contains("women")
-                )
+                if "League" in df.columns:
+                    df = df.filter(
+                        ~(
+                            pl.col("League").str.to_lowercase().str.contains("women") |
+                            pl.col("League").str.contains("Premiership Rugby Cup Playoffs") |
+                            pl.col("League").str.contains("Super Rugby Americas") 
+
+                        )
+                    )
             columns_to_drop = ["AP","OT","HT","FT","Comment", "Postponed"]
             df = df.drop(columns_to_drop)
             if "Date" in df.columns:
@@ -256,7 +262,7 @@ elif page == "Rugby":
                             .dt.strftime("%m/%d/%Y")
                             .alias("Date")
                 )
-            st.subheader("Processed League Data")
+            st.subheader("Processed Rugby Data")
             df_display = df.select([
                 "Date", "KO", "League", "Home", "Away", "Match Id"
             ])
@@ -342,7 +348,7 @@ elif page == "Basketball":
                             .dt.strftime("%m/%d/%Y")
                             .alias("Date")
                 )
-            st.subheader("Processed League Data")
+            st.subheader("Processed Basketball Data")
             df_display = df.select([
                 "Date", "KO", "League", "Home", "Away", "Match Id"
             ])
