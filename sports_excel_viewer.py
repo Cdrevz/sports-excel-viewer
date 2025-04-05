@@ -46,7 +46,7 @@ if page == "Ice Hockey":
             pl.col("League").forward_fill()
         )
         df = df.filter(pl.col("Postponed") == "0")
-        filter_words = ["Russia.KHL", "Czechia.Extraliga", "Slovakia.Extraliga", "Sweden.SHL","Finland.Liiga","Sweden.SHL","Champions Hockey"]
+        filter_words = ["Russia.KHL", "Czechia.Extraliga", "Slovakia.Extraliga", "Sweden.SHL","Finland.Liiga","Sweden.SHL","Champions Hockey League", "International.U20 World Championship, Group"]
         df = df.filter(
             pl.col("League").str.contains("|".join(filter_words))  # Use regex to match any of the words
         )
@@ -148,7 +148,7 @@ elif page == "Soccer":
                 pl.col("League").forward_fill()
             )
             df = df.filter(pl.col("Postponed") == "0")
-            filter_words = ["Italy.Serie A", "Spain.LaLiga", "England.Premier League", "Germany.Bundesliga", "USA.Major League Soccer","Austra.Bundesliga"]
+            filter_words = ["Italy.Serie A", "Spain.LaLiga", "England.Premier League", "Germany.Bundesliga", "USA.Major League Soccer","Austria.Bundesliga","USA.MLS","International Clubs.UEFA Champions League"]
             df = df.filter(
                 pl.col("League").str.contains("|".join(filter_words))
             )
@@ -167,7 +167,10 @@ elif page == "Soccer":
             # Filter out rows where League column contains "women" (case insensitive)
             if "League" in df.columns:
                 df = df.filter(
-                    ~pl.col("League").str.to_lowercase().str.contains("women")
+                    ~(
+                        pl.col("League").str.to_lowercase().str.contains("women") |
+                        pl.col("League").str.contains("MLS Next Pro")
+                    )
                 )
             columns_to_drop = ["AP","OT","HT","FT","Comment", "Postponed"]
             df = df.drop(columns_to_drop)
@@ -219,7 +222,12 @@ elif page == "Rugby":
                 pl.col("League").forward_fill()
             )
             df = df.filter(pl.col("Postponed") == "0")
-            filter_words = ["Six Nations", "Super Rugby", "Premiership Rugby"]
+            filter_words = [
+                  "Six Nations",
+                  "Super Rugby",
+                    "Premiership Rugby",
+                    "European Rugby Champions Cup"
+                    ]
             df = df.filter(
                 pl.col("League").str.contains("|".join(filter_words))
             )
@@ -289,14 +297,23 @@ elif page == "Basketball":
                 pl.col("League").forward_fill()
             )
             df = df.filter(pl.col("Postponed") == "0")
-            filter_words = ["Italy Serie",
-                            "France LNB Elite",
-                            "Turkiye Super League",
-                            "Spain Liga ACB",
-                            "Germany BBL",
-                            "Euroleague",
-                            "Eurocup",
-                            "Israel Super League"]
+            filter_words = ["Italy.Serie A",
+                            "France.LNB Elite",
+                            "Turkiye.Super Lig",
+                            "Spain.Liga ACB",
+                            "Germany.BBL",
+                            "International.Euroleague",
+                            "International.Eurocup",
+                            "Israel.Super League",
+                            "International.ABA Liga",
+                            "China.CBA",
+                            "Australia.NBL",
+                            "Greece.Greek Basketball League",
+                            "International.FIBA World Cup",
+                            "International.Champions League",
+                            "International.ABA Liga",
+                            "International.Olympic"
+                        ]
             df = df.filter(
                 pl.col("League").str.contains("|".join(filter_words))
             )
