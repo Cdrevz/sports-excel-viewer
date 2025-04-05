@@ -147,6 +147,14 @@ elif page == "Soccer":
             ).with_columns(
                 pl.col("League").forward_fill()
             )
+            if "League" in df.columns:
+                df = df.filter(
+                    ~(
+                        pl.col("League").str.to_lowercase().str.contains("women") |
+                        pl.col("League").str.to_lowercase().str.contains("Spain.LaLiga 2") |
+                        pl.col("League").str.contains("MLS Next Pro")
+                    )
+                )
             df = df.filter(pl.col("Postponed") == "0")
             filter_words = ["Italy.Serie A", "Spain.LaLiga", "England.Premier League", "Germany.Bundesliga", "USA.Major League Soccer","Austria.Bundesliga","USA.MLS","International Clubs.UEFA Champions League"]
             df = df.filter(
@@ -164,14 +172,7 @@ elif page == "Soccer":
                 )
                 .alias("League")
             )
-            # Filter out rows where League column contains "women" (case insensitive)
-            if "League" in df.columns:
-                df = df.filter(
-                    ~(
-                        pl.col("League").str.to_lowercase().str.contains("women") |
-                        pl.col("League").str.contains("MLS Next Pro")
-                    )
-                )
+            
             columns_to_drop = ["AP","OT","HT","FT","Comment", "Postponed"]
             df = df.drop(columns_to_drop)
             if "Date" in df.columns:
@@ -250,6 +251,7 @@ elif page == "Rugby":
                         ~(
                             pl.col("League").str.to_lowercase().str.contains("women") |
                             pl.col("League").str.contains("Premiership Rugby Cup Playoffs") |
+                            pl.col("League").str.contains("U Six Nations") |
                             pl.col("League").str.contains("Super Rugby Americas") 
 
                         )
@@ -370,7 +372,7 @@ elif page == "Basketball":
             st.error(f"Error processing file: {str(e)}")
             
 elif page == "Aussie Rules":
-    st.title(" Aussie Rules Excel Upload")
+    st.title("🏈 Aussie Rules Excel Upload")
     uploaded_file = st.file_uploader("Upload Excel file for Aussie Rules", type=["xls", "xlsx"])
     if uploaded_file is not None:
         try:
@@ -380,7 +382,7 @@ elif page == "Aussie Rules":
             df.columns = new_columns
             df = df.with_columns(
                 pl.when(
-                    df["Date"].str.starts_with("Aussie Rules")
+                    df["Date"].str.starts_with("Aussie rules")
                 )
                 .then(df["Date"])
                 .otherwise(None)
@@ -389,7 +391,7 @@ elif page == "Aussie Rules":
                 pl.col("League").forward_fill()
             )
             df = df.filter(pl.col("Postponed") == "0")
-            filter_words = ["Aussie Rules"]
+            filter_words = ["Australia.AFL"]
             df = df.filter(
                 pl.col("League").str.contains("|".join(filter_words))
             )
@@ -397,7 +399,7 @@ elif page == "Aussie Rules":
                 pl.col("League")
                 .str.replace(r",", "")
                 .str.replace(r"(?i)\bweek\b", "")
-                .str.replace("Aussie Rules.", "")
+                .str.replace("Aussie rules.", "")
                 .str.strip_chars()
                 .map_elements(
                     lambda x: re.sub(r'\d+', '', str(x)) if x is not None else None,
@@ -407,9 +409,13 @@ elif page == "Aussie Rules":
             )
             # Filter out rows where League column contains "women" (case insensitive)
             if "League" in df.columns:
-                df = df.filter(
-                    ~pl.col("League").str.to_lowercase().str.contains("women")
-                )
+                if "League" in df.columns:
+                    df = df.filter(
+                        ~(
+                            pl.col("League").str.to_lowercase().str.contains("Australia.SANFL") |
+                            pl.col("League").str.contains("AFL Preseason")
+                        )
+    )
             columns_to_drop = ["1","2","3","4","OT","FT","Comment", "Postponed"]
             df = df.drop(columns_to_drop)
             if "Date" in df.columns:
