@@ -111,9 +111,11 @@ if page == "Ice Hockey":
             pl.lit(None).alias("Suspension issue"),  
             pl.lit(None).alias("Goals issue"),    
         )
-        
+        if "Goals" in df.columns:
+            df = df.filter(pl.col("Goals").is_not_null())  # Keeps only non-null rows
         # Step 13: Rearrange columns to place the empty columns after "Match Id"
         df_display = df.select(["Date", "KO", "League", "Home", "Away", "Match Id", "Datapoints", "Issue", "Goals","Goals issue","Suspensions","Suspension issue","Period"])
+        
         st.subheader("Processed Ice Hockey Data")
         st.dataframe(df_display)
         current_date = datetime.now().strftime("%Y%m%d")
