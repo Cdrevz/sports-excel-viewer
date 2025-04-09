@@ -45,12 +45,32 @@ if page == "Ice Hockey":
         ).with_columns(
             pl.col("League").forward_fill()
         )
+        
+        # First filter out unwanted leagues (women's leagues and Liiga Relegation)
+        if "League" in df.columns:
+            df = df.filter(
+                ~(
+                    pl.col("League").str.to_lowercase().str.contains("liiga, relegation/promotion") 
+                )
+            )
+        
         df = df.filter(pl.col("Postponed") == "0")
-        filter_words = ["Russia.KHL", "Czechia.Extraliga", "Slovakia.Extraliga", "Sweden.SHL","Finland.Liiga","Sweden.SHL","Champions Hockey League", "International.U20 World Championship, Group"]
+        
+        # Then filter for wanted leagues
+        filter_words = [
+            "Russia.KHL", 
+            "Czechia.Extraliga", 
+            "Slovakia.Extraliga", 
+            "Sweden.SHL",
+            "Finland.Liiga",
+            "Champions Hockey League", 
+            "International.U20 World Championship, Group"
+        ]
         df = df.filter(
-            pl.col("League").str.contains("|".join(filter_words))  # Use regex to match any of the words
+            pl.col("League").str.contains("|".join(filter_words))
         )
         
+        # Clean up league names
         df = df.with_columns(
             pl.col("League")
             .str.replace(r",", "")
@@ -66,62 +86,61 @@ if page == "Ice Hockey":
             )
             .alias("League")
         )
+        
+        # Rest of your processing code remains the same...
         df = df.with_columns(
-            pl.when(pl.col("AP").is_not_null())  # If "AP" is not null, split and sum its values
+            pl.when(pl.col("AP").is_not_null())
             .then(
                 pl.col("AP")
                 .str.split(":")
                 .map_elements(lambda x: sum(int(i) for i in x), return_dtype=pl.Int64)
             )
-            .when(pl.col("OT").is_not_null())  # If "OT" is not null, split and sum its values
+            .when(pl.col("OT").is_not_null())
             .then(
                 pl.col("OT")
                 .str.split(":")
                 .map_elements(lambda x: sum(int(i) for i in x), return_dtype=pl.Int64)
             )
-            .when(pl.col("FT").is_not_null())  # If "FT" is not null, split and sum its values
+            .when(pl.col("FT").is_not_null())
             .then(
                 pl.col("FT")
                 .str.split(":")
                 .map_elements(lambda x: sum(int(i) for i in x), return_dtype=pl.Int64)
             )
-            .otherwise(None)  # If all columns are null, set "Goals" to None
-            .alias("Goals")  # Name the new column "Goals"
+            .otherwise(None)
+            .alias("Goals")
         )
 
-        # Step 10: Create a new column "Period" based on the conditions
         df = df.with_columns(
-            pl.when(pl.col("AP").is_not_null())  # If "AP" is not null, set "Period" to 5
+            pl.when(pl.col("AP").is_not_null())
             .then(5)
-            .when(pl.col("OT").is_not_null())  # If "OT" is not null, set "Period" to 4
+            .when(pl.col("OT").is_not_null())
             .then(4)
-            .otherwise(3)  # Otherwise, set "Period" to 3
-            .alias("Period")  # Name the new column "Period"
+            .otherwise(3)
+            .alias("Period")
         )
 
-        # Step 11: Drop specified columns
         columns_to_drop = ["FT", "1", "2", "3", "OT", "AP", "Postponed"]
         df = df.drop(columns_to_drop)
 
-        # Step 12: Add two empty columns after "Match Id"
         df = df.with_columns(
-            pl.lit(None).alias("Datapoints"),  # Add empty columns for faster copy and pasting
+            pl.lit(None).alias("Datapoints"),
             pl.lit(None).alias("Issue"), 
             pl.lit(None).alias("Suspensions"),
             pl.lit(None).alias("Suspension issue"),  
             pl.lit(None).alias("Goals issue"),    
         )
+        
         if "Goals" in df.columns:
-            df = df.filter(pl.col("Goals").is_not_null())  # Keeps only non-null rows
-        # Step 13: Rearrange columns to place the empty columns after "Match Id"
+            df = df.filter(pl.col("Goals").is_not_null())
+            
         df_display = df.select(["Date", "KO", "League", "Home", "Away", "Match Id", "Datapoints", "Issue", "Goals","Goals issue","Suspensions","Suspension issue","Period"])
         
         st.subheader("Processed Ice Hockey Data")
         st.dataframe(df_display)
         current_date = datetime.now().strftime("%Y%m%d")
-        # Download button - use df_display instead of df
         output = BytesIO()
-        df_display.write_excel(output)  # Write the displayed columns only
+        df_display.write_excel(output)
         output.seek(0)
         st.download_button(
             label="Download Excel",
