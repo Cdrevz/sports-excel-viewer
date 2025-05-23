@@ -65,8 +65,8 @@ if page == "Ice Hockey":
             "Finland.Liiga",
             "Champions Hockey League", 
             "International.U20 World Championship, Group",
-            "International.World Championship, Group"
-            ""
+            "International.World Championship, Group",
+            "International.World Championship, Knockout Stage"
         ]
         df = df.filter(
             pl.col("League").str.contains("|".join(filter_words))
@@ -81,6 +81,7 @@ if page == "Ice Hockey":
             .str.replace("Playoff,", "")
             .str.replace("Playoffs,", "")
             .str.replace("Playout", "")
+            .str.replace("Knockout Stage,", "")
             .str.strip_chars()
             .map_elements(
                 lambda x: re.sub(r'\d+', '', str(x)) if x is not None else None,
