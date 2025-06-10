@@ -472,13 +472,13 @@ elif page == "Aussie Rules":
     
 elif page == "Program Review":
     def parse_sports_text(text: str) -> dict:
-        """Parse sports text into structured data by extracting Sport, Category, and Tournament.
+        """Parse sports text into structured data by extracting Sport, Category, Tournament, and Date.
         
         Args:
             text: Input string containing sports information with possible prefixes/suffixes
             
         Returns:
-            Dictionary with keys: Sport, Category, Tournament
+            Dictionary with keys: Sport, Category, Tournament, Date
             
         Raises:
             ValueError: If text doesn't contain at least Sport and Category separated by '-'
@@ -496,6 +496,25 @@ elif page == "Program Review":
         for pattern in patterns_to_remove:
             cleaned = cleaned.replace(pattern, "")
         cleaned = cleaned.strip()
+
+        # Extract year (4-digit number in the tournament name)
+        year_match = re.search(r'\b(20\d{2})\b', cleaned)
+        year = int(year_match.group(1)) if year_match else 2025  # Default to 2025 if not found
+
+        # Extract date (format like /2.6./)
+        date_match = re.search(r'/(\d+)\.(\d+)\./', cleaned)
+        date_str = ""
+        if date_match:
+            day, month = map(int, date_match.groups())
+            try:
+                date_obj = datetime(year=year, month=month, day=day)
+                date_str = date_obj.strftime("%-m/%-d/%Y")  # Removes leading zeros (e.g., 6/2/2025)
+            except ValueError:
+                # Fallback if day/month is invalid (e.g., 31.2.)
+                date_str = f"{month}/{day}/{year}"
+            
+            # Remove the date pattern from the cleaned text
+            cleaned = re.sub(r'/\d+\.\d+\./', '', cleaned)
         
         # Split into components, handling multiple hyphens and spaces
         parts = [part.strip() for part in cleaned.split("-") if part.strip()]
@@ -521,7 +540,8 @@ elif page == "Program Review":
         return {
             "Sport": sport,
             "Category": category,
-            "Tournament": tournament
+            "Tournament": tournament,
+            "Date": date_str
         }
     
     st.title("Sports Category Transformer")
