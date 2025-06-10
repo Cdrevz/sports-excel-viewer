@@ -471,6 +471,7 @@ elif page == "Aussie Rules":
         
     
 elif page == "Program Review":
+
     def parse_sports_text(text: str) -> dict:
         """Parse sports text into structured data by extracting Sport, Category, Tournament, and Date.
         
@@ -512,9 +513,6 @@ elif page == "Program Review":
             except ValueError:
                 # Fallback if day/month is invalid (e.g., 31.2.)
                 date_str = f"{month}/{day}/{year}"
-            
-            # Remove the date pattern from the cleaned text
-            cleaned = re.sub(r'/\d+\.\d+\./', '', cleaned)
         
         # Split into components, handling multiple hyphens and spaces
         parts = [part.strip() for part in cleaned.split("-") if part.strip()]
@@ -540,8 +538,8 @@ elif page == "Program Review":
         return {
             "Sport": sport,
             "Category": category,
-            "Tournament": tournament,
-            "Date": date_str
+            "Tournament": tournament,  # Original Tournament text (unchanged)
+            "Date": date_str  # Extracted date (e.g., "6/2/2025")
         }
     
     st.title("Sports Category Transformer")
