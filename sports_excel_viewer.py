@@ -469,6 +469,7 @@ elif page == "Basketball":
                     df = df.filter(
                         ~(
                             pl.col("League").str.to_lowercase().str.contains("women") |
+                            pl.col("League").str.to_lowercase().str.contains("Promotion") |
                             pl.col("League").str.contains("NBL Central") |
                             pl.col("League").str.contains("NBL East") |
                             pl.col("League").str.contains("NBL West") |
@@ -482,8 +483,8 @@ elif page == "Basketball":
                             pl.col("League").str.contains("Champions League Asia Group E") |
                             pl.col("League").str.contains("Champions League Asia Group F") |
                             pl.col("League").str.contains("Champions League Asia Group G")  |
-                            pl.col("League").str.contains("Champions League Asia Knockout Stage,") 
-
+                            pl.col("League").str.contains("Champions League Asia Knockout Stage,") |
+                            pl.col("League").str.contains("ABA Liga Relegation/Promotion Playoff,")
 
                         )
                     )
