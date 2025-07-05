@@ -4,6 +4,10 @@ from io import BytesIO
 import polars as pl
 import re
 from datetime import datetime
+import xlrd
+from openpyxl import Workbook
+import tempfile
+import os
 
 st.set_page_config(
     page_title="Sports Excel Viewer",
@@ -21,6 +25,43 @@ page = st.sidebar.radio("Select", [
     "Program Review"
     ])
 
+def convert_xls_to_xlsx(uploaded_file):
+    """Convert .xls file to .xlsx format using xlrd and openpyxl"""
+    try:
+        # Save uploaded file to temporary location
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xls') as tmp_file:
+            tmp_file.write(uploaded_file.getvalue())
+            tmp_xls_path = tmp_file.name
+        
+        # Read the .xls file using xlrd
+        book = xlrd.open_workbook(tmp_xls_path)
+        sheet = book.sheet_by_index(0)
+        
+        # Create a new .xlsx file using openpyxl
+        wb = Workbook()
+        ws = wb.active
+        if ws is None:
+            ws = wb.create_sheet()
+        
+        # Write data to the new .xlsx file
+        for row in range(sheet.nrows):
+            for col in range(sheet.ncols):
+                ws.cell(row=row+1, column=col+1, value=sheet.cell_value(row, col))
+        
+        # Save to temporary .xlsx file
+        tmp_xlsx_path = tmp_xls_path.replace('.xls', '.xlsx')
+        wb.save(tmp_xlsx_path)
+        
+        # Clean up the temporary .xls file
+        os.unlink(tmp_xls_path)
+        
+        # Return the path to the converted file
+        return tmp_xlsx_path
+        
+    except Exception as e:
+        st.error(f"Error converting .xls file: {str(e)}")
+        return None
+
 def process_excel(uploaded_file):
     st.success("Excel file uploaded successfully!")
     st.write("File details:")
@@ -31,7 +72,22 @@ if page == "Ice Hockey":
     st.title("🏒 Ice Hockey Excel Upload")
     uploaded_file = st.file_uploader("Upload Excel file for Ice Hockey", type=["xls", "xlsx"])
     if uploaded_file is not None:
-        df = pl.read_excel(uploaded_file)
+        # Convert .xls to .xlsx if needed
+        if uploaded_file.name.endswith('.xls'):
+            st.info("Converting .xls file to .xlsx format...")
+            converted_file_path = convert_xls_to_xlsx(uploaded_file)
+            if converted_file_path is None:
+                st.error("Failed to convert .xls file. Please try again.")
+                st.stop()
+            # Read the converted file
+            df = pl.read_excel(converted_file_path)
+            # Clean up the temporary converted file
+            try:
+                os.unlink(converted_file_path)
+            except:
+                pass
+        else:
+            df = pl.read_excel(uploaded_file)
         new_columns = df.head(1).row(0)
         df = df.slice(0)
         df.columns = new_columns
@@ -157,7 +213,22 @@ elif page == "Soccer":
     uploaded_file = st.file_uploader("Upload Excel file for Soccer", type=["xls", "xlsx"])
     if uploaded_file is not None:
         try:
-            df = pl.read_excel(uploaded_file)
+            # Convert .xls to .xlsx if needed
+            if uploaded_file.name.endswith('.xls'):
+                st.info("Converting .xls file to .xlsx format...")
+                converted_file_path = convert_xls_to_xlsx(uploaded_file)
+                if converted_file_path is None:
+                    st.error("Failed to convert .xls file. Please try again.")
+                    st.stop()
+                # Read the converted file
+                df = pl.read_excel(converted_file_path)
+                # Clean up the temporary converted file
+                try:
+                    os.unlink(converted_file_path)
+                except:
+                    pass
+            else:
+                df = pl.read_excel(uploaded_file)
             new_columns = df.head(1).row(0)
             df = df.slice(0)
             df.columns = new_columns
@@ -232,7 +303,22 @@ elif page == "Rugby":
     uploaded_file = st.file_uploader("Upload Excel file for Rugby", type=["xls", "xlsx"])
     if uploaded_file is not None:
         try:
-            df = pl.read_excel(uploaded_file)
+            # Convert .xls to .xlsx if needed
+            if uploaded_file.name.endswith('.xls'):
+                st.info("Converting .xls file to .xlsx format...")
+                converted_file_path = convert_xls_to_xlsx(uploaded_file)
+                if converted_file_path is None:
+                    st.error("Failed to convert .xls file. Please try again.")
+                    st.stop()
+                # Read the converted file
+                df = pl.read_excel(converted_file_path)
+                # Clean up the temporary converted file
+                try:
+                    os.unlink(converted_file_path)
+                except:
+                    pass
+            else:
+                df = pl.read_excel(uploaded_file)
             new_columns = df.head(1).row(0)
             df = df.slice(0)
             df.columns = new_columns
@@ -314,7 +400,22 @@ elif page == "Basketball":
     uploaded_file = st.file_uploader("Upload Excel file for Basketball", type=["xls", "xlsx"])
     if uploaded_file is not None:
         try:
-            df = pl.read_excel(uploaded_file)
+            # Convert .xls to .xlsx if needed
+            if uploaded_file.name.endswith('.xls'):
+                st.info("Converting .xls file to .xlsx format...")
+                converted_file_path = convert_xls_to_xlsx(uploaded_file)
+                if converted_file_path is None:
+                    st.error("Failed to convert .xls file. Please try again.")
+                    st.stop()
+                # Read the converted file
+                df = pl.read_excel(converted_file_path)
+                # Clean up the temporary converted file
+                try:
+                    os.unlink(converted_file_path)
+                except:
+                    pass
+            else:
+                df = pl.read_excel(uploaded_file)
             new_columns = df.head(1).row(0)
             df = df.slice(0)
             df.columns = new_columns
@@ -352,6 +453,7 @@ elif page == "Basketball":
             df = df.with_columns(
                 pl.col("League")
                 .str.replace(r",", "")
+                .str.replace(r"Playoffs,", "Playoffs")
                 .str.replace(r"(?i)\bweek\b", "")
                 .str.replace("Basketball.", "")
                 .str.strip_chars()
@@ -363,9 +465,28 @@ elif page == "Basketball":
             )
             # Filter out rows where League column contains "women" (case insensitive)
             if "League" in df.columns:
-                df = df.filter(
-                    ~pl.col("League").str.to_lowercase().str.contains("women")
-                )
+                if "League" in df.columns:
+                    df = df.filter(
+                        ~(
+                            pl.col("League").str.to_lowercase().str.contains("women") |
+                            pl.col("League").str.contains("NBL Central") |
+                            pl.col("League").str.contains("NBL East") |
+                            pl.col("League").str.contains("NBL West") |
+                            pl.col("League").str.contains("NBL North") |
+                            pl.col("League").str.contains("NBL South") |
+                            pl.col("League").str.contains("Champions League Asia Group C") |
+                            pl.col("League").str.contains("Champions League Asia Group") |
+                            pl.col("League").str.contains("Champions League Asia Group A") |
+                            pl.col("League").str.contains("Champions League Asia Group B") |
+                            pl.col("League").str.contains("Champions League Asia Group D") |
+                            pl.col("League").str.contains("Champions League Asia Group E") |
+                            pl.col("League").str.contains("Champions League Asia Group F") |
+                            pl.col("League").str.contains("Champions League Asia Group G")  |
+                            pl.col("League").str.contains("Champions League Asia Knockout Stage,") 
+
+
+                        )
+                    )
             columns_to_drop = ["1","2","3","4","OT","FT","Comment", "Postponed"]
             df = df.drop(columns_to_drop)
             if "Date" in df.columns:
@@ -400,7 +521,22 @@ elif page == "Aussie Rules":
     uploaded_file = st.file_uploader("Upload Excel file for Aussie Rules", type=["xls", "xlsx"])
     if uploaded_file is not None:
         try:
-            df = pl.read_excel(uploaded_file)
+            # Convert .xls to .xlsx if needed
+            if uploaded_file.name.endswith('.xls'):
+                st.info("Converting .xls file to .xlsx format...")
+                converted_file_path = convert_xls_to_xlsx(uploaded_file)
+                if converted_file_path is None:
+                    st.error("Failed to convert .xls file. Please try again.")
+                    st.stop()
+                # Read the converted file
+                df = pl.read_excel(converted_file_path)
+                # Clean up the temporary converted file
+                try:
+                    os.unlink(converted_file_path)
+                except:
+                    pass
+            else:
+                df = pl.read_excel(uploaded_file)
             new_columns = df.head(1).row(0)
             df = df.slice(0)
             df.columns = new_columns
@@ -547,11 +683,26 @@ elif page == "Program Review":
     
     if uploaded_file is not None:
         try:
-            # Read file based on type
-            if uploaded_file.name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file, header=None)
+            # Convert .xls to .xlsx if needed
+            if uploaded_file.name.endswith('.xls'):
+                st.info("Converting .xls file to .xlsx format...")
+                converted_file_path = convert_xls_to_xlsx(uploaded_file)
+                if converted_file_path is None:
+                    st.error("Failed to convert .xls file. Please try again.")
+                    st.stop()
+                # Read the converted file
+                df = pd.read_excel(converted_file_path, header=None)
+                # Clean up the temporary converted file
+                try:
+                    os.unlink(converted_file_path)
+                except:
+                    pass
             else:
-                df = pd.read_excel(uploaded_file, header=None)
+                # Read file based on type
+                if uploaded_file.name.endswith('.csv'):
+                    df = pd.read_csv(uploaded_file, header=None)
+                else:
+                    df = pd.read_excel(uploaded_file, header=None)
             
             # Check if there's a second column and combine with first column
             if df.shape[1] > 1:
