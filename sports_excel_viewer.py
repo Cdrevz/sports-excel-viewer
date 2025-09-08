@@ -337,7 +337,8 @@ elif page == "Rugby":
                   "Six Nations",
                   "Super Rugby",
                     "Premiership Rugby",
-                    "European Rugby Champions Cup"
+                    "European Rugby Champions Cup",
+                    "The Rugby Championship"
                     ]
             df = df.filter(
                 pl.col("League").str.contains("|".join(filter_words))
