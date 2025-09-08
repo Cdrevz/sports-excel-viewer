@@ -446,8 +446,9 @@ elif page == "Basketball":
                             "International.FIBA World Cup",
                             "International.Champions League",
                             "International.ABA Liga",
-                            "International.Olympic"
-                        ]
+                            "International.Olympic",
+                            "European Championship"
+                            ]
             df = df.filter(
                 pl.col("League").str.contains("|".join(filter_words))
             )
@@ -485,7 +486,9 @@ elif page == "Basketball":
                             pl.col("League").str.contains("Champions League Asia Group F") |
                             pl.col("League").str.contains("Champions League Asia Group G")  |
                             pl.col("League").str.contains("Champions League Asia Knockout Stage,") |
-                            pl.col("League").str.contains("ABA Liga Relegation/Promotion Playoff,")
+                            pl.col("League").str.contains("ABA Liga Relegation/Promotion Playoff,") |
+                            pl.col("League").str.contains("FIBA World Cup Americas Pre-Qualifiers,")
+
 
                         )
                     )
