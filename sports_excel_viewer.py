@@ -469,17 +469,12 @@ elif page == "Basketball":
                 .str.replace(r"Playoffs,", "Playoffs")
                 .str.replace(r"(?i)\bweek\b", "")
                 .str.replace("Basketball.", "")
-                .str.strip_chars()
                 .str.replace(r",", "", n=0)
                 .str.replace(r", ", "", n=0)
-                .map_elements(
-                    lambda x: re.sub(r"\d+", "", str(x)) if x is not None else None,
-                    return_dtype=pl.Utf8,
-                )
-                .map_elements(
-                    lambda x: re.sub(r"\d+", "", str(x)) if x is not None else None,
-                    return_dtype=pl.Utf8,
-                )
+                # .map_elements(
+                #     lambda x: re.sub(r"\d+", "", str(x)) if x is not None else None,
+                #     return_dtype=pl.Utf8,
+                # )
                 .alias("League")
             )
             # Filter out rows where League column contains "women" (case insensitive)
@@ -531,6 +526,9 @@ elif page == "Basketball":
                             )
                             | pl.col("League").str.contains("France.LNB Elite 2")
                             | pl.col("League").str.contains("Germany.BBL Pokal")
+                            | pl.col("League").str.contains("International.ABA Liga 2")
+                            | pl.col("League").str.contains("Italy.Serie A2")
+
                         )
                     )
             columns_to_drop = ["1", "2", "3", "4", "OT", "FT", "Comment", "Postponed"]
@@ -542,6 +540,13 @@ elif page == "Basketball":
                     .dt.strftime("%m/%d/%Y")
                     .alias("Date")
                 )
+            # REMOVE NUMBERS AFTER ALL FILTERING IS DONE
+            df = df.with_columns(
+                pl.col("League")
+                .str.replace_all(r"\d+", "")  # Remove all numbers
+                .str.strip_chars()  # Clean up any extra spaces left by number removal
+                .alias("League")
+            )
             st.subheader("Processed Basketball Data")
             df_display = df.select(["Date", "KO", "League", "Home", "Away", "Match Id"])
 
@@ -628,6 +633,7 @@ elif page == "Aussie Rules":
                     .dt.strftime("%m/%d/%Y")
                     .alias("Date")
                 )
+            
             st.subheader("Processed League Data")
             df_display = df.select(["Date", "KO", "League", "Home", "Away", "Match Id"])
 
