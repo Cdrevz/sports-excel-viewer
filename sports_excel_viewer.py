@@ -527,6 +527,10 @@ elif page == "Basketball":
                             | pl.col("League").str.contains("France.LNB Elite 2")
                             | pl.col("League").str.contains("Germany.BBL Pokal")
                             | pl.col("League").str.contains("International.ABA Liga 2")
+                            | pl.col("League").str.contains("FIBA World Cup African Qualifiers")
+                            | pl.col("League").str.contains("FIBA World Cup Americas")
+                            | pl.col("League").str.contains("FIBA World Cup Asian")
+                            | pl.col("League").str.contains("FIBA World Cup European")
                             | pl.col("League").str.contains("Italy.Serie A2")
 
                         )
