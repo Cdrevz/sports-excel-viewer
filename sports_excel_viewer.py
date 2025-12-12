@@ -380,6 +380,7 @@ elif page == "Rugby":
                                 "Premiership Rugby Cup Playoffs"
                             )
                             | pl.col("League").str.contains("U Six Nations")
+                            | pl.col("League").str.contains("Premiership Rugby Cup Pool")
                             | pl.col("League").str.contains("Super Rugby Americas")
                         )
                     )
