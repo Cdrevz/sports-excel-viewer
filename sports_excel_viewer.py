@@ -178,7 +178,13 @@ if page == "Ice Hockey":
 
         columns_to_drop = ["FT", "1", "2", "3", "OT", "AP", "Postponed"]
         df = df.drop(columns_to_drop)
-
+        if "Date" in df.columns:
+            df = df.with_columns(
+                pl.col("Date")
+                .str.strptime(pl.Date, format="%d/%m %y")
+                .dt.strftime("%m/%d/%Y")
+                .alias("Date")
+            )
         df = df.with_columns(
             pl.lit(None).alias("Datapoints"),
             pl.lit(None).alias("Issue"),
@@ -189,7 +195,7 @@ if page == "Ice Hockey":
 
         if "Goals" in df.columns:
             df = df.filter(pl.col("Goals").is_not_null())
-
+        df = df.sort("Date") #sorts date by ascending order
         df_display = df.select(
             [
                 "Date",
@@ -207,7 +213,6 @@ if page == "Ice Hockey":
                 "Period",
             ]
         )
-
         st.subheader("Processed Ice Hockey Data")
         st.dataframe(df_display)
         current_date = datetime.now().strftime("%Y%m%d")
