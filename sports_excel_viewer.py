@@ -124,6 +124,8 @@ if page == "Ice Hockey":
             "International.World Championship, Knockout Stage",
             "International.Olympic Games, Knockout Stage",
             "International.Olympic Games, Group",
+            "International.Olympic Games, Women, Group",
+            "International.Olympic Games, Women, Knockout Stage",
         ]
         df = df.filter(pl.col("League").str.contains("|".join(filter_words)))
 
