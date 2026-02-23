@@ -105,7 +105,10 @@ if page == "Ice Hockey":
                 ~(
                     pl.col("League")
                     .str.to_lowercase()
-                    .str.contains("liiga, relegation/promotion")
+                    .str.contains("liiga, relegation/promotion") | 
+                    pl.col("League")
+                    .str.to_lowercase()
+                    .str.contains("all star game")
                 )
             )
 
